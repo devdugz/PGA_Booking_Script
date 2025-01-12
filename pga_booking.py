@@ -6,6 +6,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from dotenv import load_dotenv
 import os
+import logging
+import sys
 
 BAY_MAPPING = {
     "Bay 1": "4008",
@@ -21,24 +23,36 @@ BAY_MAPPING = {
 # Configuration
 DESIRED_BAY = "Bay 5"
 
+# Create logs directory if it doesn't exist
+os.makedirs('/Users/cdugz/Documents/PGA_Booking_Script_2/logs', exist_ok=True)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s: %(message)s',
+    handlers=[
+        logging.FileHandler('/Users/cdugz/Documents/PGA_Booking_Script_2/logs/booking.log'),
+        logging.StreamHandler(sys.stdout)
+    ],
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 
 def book_golf_bay():
-    # ---------------------------------
-    # 1. Set up ChromeDriver and browser
-    # ---------------------------------
+    logger.info("Starting golf bay booking process")
+    
     chrome_options = Options()
-    # Uncomment the line below if you want to run Chrome headlessly (no browser window shown)
-    chrome_options.add_argument("--headless")
-
-    # Update the path to where you placed chromedriver.exe
-    service = Service("./drivers/chromedriver")  
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-
+    # chrome_options.add_argument("--headless=new")
+    
     try:
-        # ---------------------------------
-        # 2. Log in to the PGA booking portal
-        # ---------------------------------
+        logger.info("Initializing Chrome driver")
+        service = Service("./drivers/chromedriver")
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+        logger.info("Attempting login")
         driver.get("https://clients.uschedule.com/pgatsmilwaukee/account/login")
         time.sleep(2)
 
@@ -68,23 +82,29 @@ def book_golf_bay():
         time.sleep(2)
 
         # ---------------------------------
-        # 5. Click “Show more results” until 4:30 PM is visible (3 times)
+        # 5. Click "Show more results" and search for desired time slot
         # ---------------------------------
-        # Adjust the element locator for the "Show more results" button.
-        # Example XPATH: "//a[@id='showMoreResults']"
         show_more_button = driver.find_element(By.ID, "more_next_avail")
+        desired_time_found = False
 
-        for _ in range(2):  # click it 3 times
-            show_more_button.click()
-            time.sleep(2)
+        for _ in range(3):  # Will try up to 3 times
+            try:
+                # Try to find the 4:30 PM time slot
+                time_slot = driver.find_element(By.CSS_SELECTOR, "div.next_avail_item[data-time*='1630']")
+                time_slot.click()
+                desired_time_found = True
+                logger.info("Found and clicked desired time slot")
+                break
+            except:
+                # If time slot not found, click show more and wait
+                show_more_button.click()
+                time.sleep(2)
+                logger.info("Clicking show more results")
 
-        # ---------------------------------
-        # 6. Click on the 4:30 PM time slot
-        # ---------------------------------
-        # You may need to inspect the element to confirm text or ID matches "4:30".
-        # Example: if 4:30 is in a <span> or button with text "4:30"
-        time_slot_430 = driver.find_element(By.CSS_SELECTOR, "div.next_avail_item[data-time*='1630']")
-        time_slot_430.click()
+        if not desired_time_found:
+            logger.error("Could not find desired time slot after multiple attempts")
+            raise Exception("Desired time slot not found")
+
         time.sleep(2)
 
 
@@ -102,17 +122,19 @@ def book_golf_bay():
         time.sleep(3)
 
         # You can add any final steps or checks here
-        print("Booking process completed successfully!")
+        logger.info("Booking process completed successfully!")
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
     finally:
-        # ---------------------------------
-        # 8. Close the browser
-        # ---------------------------------
+        logger.info("Closing browser")
         time.sleep(5)
         driver.quit()
 
 # For direct script execution
 if __name__ == "__main__":
-    book_golf_bay()
+    try:
+        book_golf_bay()
+    except Exception as e:
+        logger.error(f"Script failed: {str(e)}")
+        sys.exit(1)

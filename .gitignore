@@ -17,6 +17,7 @@ ENV/
 *.code-workspace
 
 # Logs
+logs/
 *.log
 booking.log
 
@@ -28,4 +29,6 @@ booking.log
 .Trashes
 
 # Other
+
 booking.log
+.__pycache__/
