@@ -52,7 +52,7 @@ def try_book_bay(driver, bay_name):
     time.sleep(2)
     
     # Search for desired time slot
-    for _ in range(3):
+    for _ in range(4):
         try:
             time_slot = driver.find_element(By.CSS_SELECTOR, "div.next_avail_item[data-time*='1630']")
             time_slot.click()
