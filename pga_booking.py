@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 import os
 import logging
 import sys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 
 BAY_MAPPING = {
     "Bay 1": "4008",
@@ -46,23 +49,68 @@ def try_book_bay(driver, bay_name):
     """Attempt to book a specific bay"""
     logger.info(f"Attempting to book {bay_name}")
     
-    facility_dropdown = driver.find_element(By.ID, "resource1440")
-    select = Select(facility_dropdown)
-    select.select_by_value(BAY_MAPPING[bay_name])
-    time.sleep(2)
-    
-    # Search for desired time slot
-    for _ in range(4):
-        try:
-            time_slot = driver.find_element(By.CSS_SELECTOR, "div.next_avail_item[data-time*='1630']")
-            time_slot.click()
-            logger.info(f"Successfully found time slot for {bay_name}")
-            return True
-        except:
-            show_more_button = driver.find_element(By.ID, "more_next_avail")
-            show_more_button.click()
-            time.sleep(2)
-    return False
+    try:
+        facility_dropdown = driver.find_element(By.ID, "resource1440")
+        select = Select(facility_dropdown)
+        select.select_by_value(BAY_MAPPING[bay_name])
+        time.sleep(2)
+        
+        # Search for desired time slot
+        for _ in range(4):
+            try:
+                time_slot = driver.find_element(By.CSS_SELECTOR, "div.next_avail_item[data-time*='1630']")
+                time_slot.click()
+                logger.info(f"Found time slot for {bay_name}, attempting confirmation")
+                
+                # Confirm booking
+                try:
+                    confirm_button = driver.find_element(By.ID, "book")
+                    driver.execute_script("arguments[0].scrollIntoView(true);", confirm_button)
+                    time.sleep(1)
+                    
+                    wait = WebDriverWait(driver, 10)
+                    clickable_button = wait.until(EC.element_to_be_clickable((By.ID, "book")))
+                    clickable_button.click()
+
+                    # Enhanced Modal Confirmation
+                    try:
+                        accept_button = wait.until(EC.presence_of_element_located((By.ID, "accept_location")))
+                        driver.execute_script("arguments[0].scrollIntoView(true);", accept_button)
+                        time.sleep(1)
+                        
+                        accept_button = wait.until(EC.element_to_be_clickable((By.ID, "accept_location")))
+                        try:
+                            accept_button.click()
+                        except:
+                            driver.execute_script("arguments[0].click();", accept_button)
+                        
+                        time.sleep(3)
+                        logger.info(f"Successfully confirmed booking for {bay_name}")
+                        return True
+                    except Exception as e:
+                        logger.error(f"Failed to click accept_location: {str(e)}")
+                        return False
+                    
+                except Exception as e:
+                    logger.error(f"Failed to confirm booking: {str(e)}")
+                    return False
+                    
+            except Exception as e:
+                logger.info(f"No slot found, trying next page for {bay_name}")
+                try:
+                    show_more_button = driver.find_element(By.ID, "more_next_avail")
+                    show_more_button.click()
+                    time.sleep(2)
+                except:
+                    logger.info(f"No more pages to check for {bay_name}")
+                    break
+        
+        logger.info(f"No available slots found for {bay_name}")
+        return False
+        
+    except Exception as e:
+        logger.error(f"Error while trying to book {bay_name}: {str(e)}")
+        return False
 
 def book_golf_bay():
     logger.info("Starting golf bay booking process")
@@ -94,33 +142,21 @@ def book_golf_bay():
         time.sleep(3)
 
         # Try primary bay first
-        if not try_book_bay(driver, PRIMARY_BAY):
+        if try_book_bay(driver, PRIMARY_BAY):
+            logger.info(f"Successfully booked {PRIMARY_BAY}")
+            return True
+        else:
             logger.info(f"No slots available for {PRIMARY_BAY}, trying {BACKUP_BAY}")
-            if not try_book_bay(driver, BACKUP_BAY):
+            if try_book_bay(driver, BACKUP_BAY):
+                logger.info(f"Successfully booked {BACKUP_BAY}")
+                return True
+            else:
                 logger.error("Could not find desired time slot in any bay")
-                raise Exception("Desired time slot not found")
-
-        time.sleep(2)
-
-
-        # ---------------------------------
-        # 7. Click "Confirm Facility"
-        # ---------------------------------
-        # Adjust the element locator if needed.
-        confirm_button = driver.find_element(By.ID, "book")
-        confirm_button.click()
-        time.sleep(3)
-
-        #Confirm Booking in Modal
-        accept_location = driver.find_element(By.ID, "accept_location")
-        accept_location.click()
-        time.sleep(3)
-
-        # You can add any final steps or checks here
-        logger.info("Booking process completed successfully!")
+                return False
 
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {str(e)}")
+        return False
     finally:
         logger.info("Closing browser")
         time.sleep(5)
