@@ -13,6 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 
 BAY_MAPPING = {
+    "Any Bay": "-1",
     "Bay 1": "4008",
     "Bay 2": "4009",
     "Bay 3": "4010",
@@ -25,7 +26,8 @@ BAY_MAPPING = {
 
 # Configuration - primary and backup bays
 PRIMARY_BAY = "Bay 5"
-BACKUP_BAY = "Bay 7"  # Add your preferred backup bay
+BACKUP_BAY_1 = "Bay 7"  # First backup bay
+BACKUP_BAY_2 = "Any Bay"  # Second backup bay
 
 # Create logs directory if it doesn't exist
 os.makedirs('/Users/cdugz/Documents/PGA_Booking_Script_2/logs', exist_ok=True)
@@ -49,6 +51,15 @@ def try_book_bay(driver, bay_name):
     """Attempt to book a specific bay"""
     logger.info(f"Attempting to book {bay_name}")
     
+
+    #Chrome Driver Settings:
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")  # Enable headless mode
+    # chrome_options.add_argument("--disable-gpu")   # Disable GPU hardware acceleration
+    # chrome_options.add_argument("--no-sandbox")    # Bypass OS security model
+    # chrome_options.add_argument("--window-size=1920x1080")  # Set window size
+    
+
     try:
         facility_dropdown = driver.find_element(By.ID, "resource1440")
         select = Select(facility_dropdown)
@@ -146,13 +157,18 @@ def book_golf_bay():
             logger.info(f"Successfully booked {PRIMARY_BAY}")
             return True
         else:
-            logger.info(f"No slots available for {PRIMARY_BAY}, trying {BACKUP_BAY}")
-            if try_book_bay(driver, BACKUP_BAY):
-                logger.info(f"Successfully booked {BACKUP_BAY}")
+            logger.info(f"No slots available for {PRIMARY_BAY}, trying {BACKUP_BAY_1}")
+            if try_book_bay(driver, BACKUP_BAY_1):
+                logger.info(f"Successfully booked {BACKUP_BAY_1}")
                 return True
             else:
-                logger.error("Could not find desired time slot in any bay")
-                return False
+                logger.info(f"No slots available for {BACKUP_BAY_1}, trying {BACKUP_BAY_2}")
+                if try_book_bay(driver, BACKUP_BAY_2):
+                    logger.info(f"Successfully booked {BACKUP_BAY_2}")
+                    return True
+                else:
+                    logger.error("Could not find desired time slot in any bay")
+                    return False
 
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
