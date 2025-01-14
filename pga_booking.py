@@ -51,15 +51,6 @@ def try_book_bay(driver, bay_name):
     """Attempt to book a specific bay"""
     logger.info(f"Attempting to book {bay_name}")
     
-
-    #Chrome Driver Settings:
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")  # Enable headless mode
-    # chrome_options.add_argument("--disable-gpu")   # Disable GPU hardware acceleration
-    # chrome_options.add_argument("--no-sandbox")    # Bypass OS security model
-    # chrome_options.add_argument("--window-size=1920x1080")  # Set window size
-    
-
     try:
         facility_dropdown = driver.find_element(By.ID, "resource1440")
         select = Select(facility_dropdown)
@@ -126,8 +117,16 @@ def try_book_bay(driver, bay_name):
 def book_golf_bay():
     logger.info("Starting golf bay booking process")
     
+    #Chrome Driver Settings:
     chrome_options = Options()
-    # chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument('--headless')  # Basic headless mode
+    chrome_options.add_argument('--disable-gpu')  # Required for headless
+    chrome_options.add_argument('--no-sandbox')  # Required for headless
+    chrome_options.add_argument('--disable-dev-shm-usage')  # Required for headless
+    chrome_options.add_argument('--window-size=1920,1080')  # Set window size
+    chrome_options.add_argument('--disable-notifications')  # Disable notifications
+    chrome_options.add_argument('--disable-extensions')  # Disable extensions
+    chrome_options.add_argument('--disable-infobars')  # Disable infobars
     
     try:
         logger.info("Initializing Chrome driver")
