@@ -23,9 +23,10 @@ def scheduled_job():
         success = book_golf_bay()  # Capture return value
         if success:  # Only shutdown on actual success
             logger.info("Booking attempt completed successfully")
-            logger.info("Booking successful - stopping scheduler")
-            scheduler.remove_all_jobs()
-            scheduler.shutdown(wait=False)
+            logger.info("Continuing to run for next day's booking")
+            # logger.info("Booking successful - stopping scheduler")
+            # scheduler.remove_all_jobs()
+            # scheduler.shutdown(wait=False)
         else:
             logger.info("Booking attempt failed - continuing schedule")
     except Exception as e:

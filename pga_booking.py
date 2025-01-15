@@ -52,7 +52,11 @@ def try_book_bay(driver, bay_name):
     logger.info(f"Attempting to book {bay_name}")
     
     try:
-        facility_dropdown = driver.find_element(By.ID, "resource1440")
+        # Add explicit wait for dropdown
+        wait = WebDriverWait(driver, 10)
+        facility_dropdown = wait.until(
+            EC.presence_of_element_located((By.ID, "resource1440"))
+        )
         select = Select(facility_dropdown)
         select.select_by_value(BAY_MAPPING[bay_name])
         time.sleep(2)
@@ -60,7 +64,10 @@ def try_book_bay(driver, bay_name):
         # Search for desired time slot
         for _ in range(4):
             try:
-                time_slot = driver.find_element(By.CSS_SELECTOR, "div.next_avail_item[data-time*='1630']")
+                # Add explicit wait for time slot
+                time_slot = wait.until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "div.next_avail_item[data-time*='1630']"))
+                )
                 time_slot.click()
                 logger.info(f"Found time slot for {bay_name}, attempting confirmation")
                 
@@ -126,7 +133,6 @@ def book_golf_bay():
     chrome_options.add_argument('--window-size=1920,1080')  # Set window size
     chrome_options.add_argument('--disable-notifications')  # Disable notifications
     chrome_options.add_argument('--disable-extensions')  # Disable extensions
-    chrome_options.add_argument('--disable-infobars')  # Disable infobars
     
     try:
         logger.info("Initializing Chrome driver")
