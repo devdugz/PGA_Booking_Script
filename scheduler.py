@@ -9,7 +9,6 @@ logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] %(levelname)s: %(message)s',
     handlers=[
-        logging.FileHandler('/Users/cdugz/Documents/PGA_Booking_Script_2/logs/scheduler.log'),
         logging.StreamHandler()
     ],
     datefmt='%Y-%m-%d %H:%M:%S'
