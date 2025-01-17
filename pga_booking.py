@@ -29,6 +29,9 @@ PRIMARY_BAY = "Bay 5"
 BACKUP_BAY_1 = "Bay 7"  # First backup bay
 BACKUP_BAY_2 = "Any Bay"  # Second backup bay
 
+# Add at top with other constants
+TIME_SLOTS = ['1630', '1700', '1715', '1730', '1745', '1800']  # 4:30, 5:00, 5:15, 5:30, 5:45, 6:00
+
 # Create logs directory if it doesn't exist
 os.makedirs('/Users/cdugz/Documents/PGA_Booking_Script_2/logs', exist_ok=True)
 
@@ -50,9 +53,9 @@ load_dotenv()
 def try_book_bay(driver, bay_name):
     """Attempt to book a specific bay"""
     logger.info(f"Attempting to book {bay_name}")
+    successful_bookings = []
     
     try:
-        # Add explicit wait for dropdown
         wait = WebDriverWait(driver, 10)
         facility_dropdown = wait.until(
             EC.presence_of_element_located((By.ID, "resource1440"))
@@ -61,61 +64,50 @@ def try_book_bay(driver, bay_name):
         select.select_by_value(BAY_MAPPING[bay_name])
         time.sleep(2)
         
-        # Search for desired time slot
+        # Search for desired time slots
         for _ in range(4):
-            try:
-                # Add explicit wait for time slot
-                time_slot = wait.until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, "div.next_avail_item[data-time*='1630']"))
-                )
-                time_slot.click()
-                logger.info(f"Found time slot for {bay_name}, attempting confirmation")
-                
-                # Confirm booking
+            for time_slot_value in TIME_SLOTS:
                 try:
-                    confirm_button = driver.find_element(By.ID, "book")
-                    driver.execute_script("arguments[0].scrollIntoView(true);", confirm_button)
-                    time.sleep(1)
+                    logger.info(f"Searching for time slot {time_slot_value} in {bay_name}")
+                    time_slot = wait.until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, f"div.next_avail_item[data-time*='{time_slot_value}']"))
+                    )
+                    time_slot.click()
+                    logger.info(f"Found time slot {time_slot_value} for {bay_name}, attempting confirmation")
                     
-                    wait = WebDriverWait(driver, 10)
-                    clickable_button = wait.until(EC.element_to_be_clickable((By.ID, "book")))
-                    clickable_button.click()
-
-                    # Enhanced Modal Confirmation
+                    # Confirm booking
                     try:
-                        accept_button = wait.until(EC.presence_of_element_located((By.ID, "accept_location")))
-                        driver.execute_script("arguments[0].scrollIntoView(true);", accept_button)
+                        confirm_button = driver.find_element(By.ID, "book")
+                        driver.execute_script("arguments[0].scrollIntoView(true);", confirm_button)
                         time.sleep(1)
                         
-                        accept_button = wait.until(EC.element_to_be_clickable((By.ID, "accept_location")))
-                        try:
-                            accept_button.click()
-                        except:
-                            driver.execute_script("arguments[0].click();", accept_button)
-                        
-                        time.sleep(3)
-                        logger.info(f"Successfully confirmed booking for {bay_name}")
-                        return True
+                        wait = WebDriverWait(driver, 10)
+                        clickable_button = wait.until(EC.element_to_be_clickable((By.ID, "book")))
+                        clickable_button.click()
+                        successful_bookings.append(time_slot_value)
+                        logger.info(f"Successfully booked {time_slot_value} for {bay_name}")
+                        continue  # Continue checking other time slots
                     except Exception as e:
-                        logger.error(f"Failed to click accept_location: {str(e)}")
-                        return False
-                    
-                except Exception as e:
-                    logger.error(f"Failed to confirm booking: {str(e)}")
-                    return False
-                    
-            except Exception as e:
-                logger.info(f"No slot found, trying next page for {bay_name}")
-                try:
-                    show_more_button = driver.find_element(By.ID, "more_next_avail")
-                    show_more_button.click()
-                    time.sleep(2)
+                        logger.error(f"Failed to confirm booking: {str(e)}")
+                        continue
                 except:
-                    logger.info(f"No more pages to check for {bay_name}")
-                    break
+                    continue
+                    
+            # If no time slots found, try next page
+            try:
+                show_more_button = driver.find_element(By.ID, "more_next_avail")
+                show_more_button.click()
+                time.sleep(2)
+            except:
+                logger.info(f"No more pages to check for {bay_name}")
+                break
         
-        logger.info(f"No available slots found for {bay_name}")
-        return False
+        if successful_bookings:
+            logger.info(f"Successfully booked {len(successful_bookings)} time slots for {bay_name}: {', '.join(successful_bookings)}")
+            return True
+        else:
+            logger.info(f"No available slots found for {bay_name}")
+            return False
         
     except Exception as e:
         logger.error(f"Error while trying to book {bay_name}: {str(e)}")
@@ -123,6 +115,7 @@ def try_book_bay(driver, bay_name):
 
 def book_golf_bay():
     logger.info("Starting golf bay booking process")
+    successful_bays = []
     
     #Chrome Driver Settings:
     chrome_options = Options()
@@ -158,23 +151,50 @@ def book_golf_bay():
         time.sleep(3)
 
         # Try primary bay first
+        # if try_book_bay(driver, PRIMARY_BAY):
+        #     logger.info(f"Successfully booked {PRIMARY_BAY}")
+        #     return True
+        # else:
+        #     logger.info(f"No slots available for {PRIMARY_BAY}, trying {BACKUP_BAY_1}")
+        #     if try_book_bay(driver, BACKUP_BAY_1):
+        #         logger.info(f"Successfully booked {BACKUP_BAY_1}")
+        #         return True
+        #     else:
+        #         logger.info(f"No slots available for {BACKUP_BAY_1}, trying {BACKUP_BAY_2}")
+        #         if try_book_bay(driver, BACKUP_BAY_2):
+        #             logger.info(f"Successfully booked {BACKUP_BAY_2}")
+        #             return True
+        #         else:
+        #             logger.error("Could not find desired time slot in any bay")
+        #             return False
         if try_book_bay(driver, PRIMARY_BAY):
+            successful_bays.append(PRIMARY_BAY)
             logger.info(f"Successfully booked {PRIMARY_BAY}")
+        else:
+            logger.info(f"No slots available for {PRIMARY_BAY}")
+            
+        # First Backup Bay
+        if try_book_bay(driver, BACKUP_BAY_1):
+            successful_bays.append(BACKUP_BAY_1)
+            logger.info(f"Successfully booked {BACKUP_BAY_1}")
+        else:
+            logger.info(f"No slots available for {BACKUP_BAY_1}")
+            
+        # Second Backup Bay
+        if try_book_bay(driver, BACKUP_BAY_2):
+            successful_bays.append(BACKUP_BAY_2)
+            logger.info(f"Successfully booked {BACKUP_BAY_2}")
+        else:
+            logger.info(f"No slots available for {BACKUP_BAY_2}")
+        
+        # Return true if any bay was booked
+        if successful_bays:
+            logger.info(f"Successfully booked bays: {', '.join(successful_bays)}")
             return True
         else:
-            logger.info(f"No slots available for {PRIMARY_BAY}, trying {BACKUP_BAY_1}")
-            if try_book_bay(driver, BACKUP_BAY_1):
-                logger.info(f"Successfully booked {BACKUP_BAY_1}")
-                return True
-            else:
-                logger.info(f"No slots available for {BACKUP_BAY_1}, trying {BACKUP_BAY_2}")
-                if try_book_bay(driver, BACKUP_BAY_2):
-                    logger.info(f"Successfully booked {BACKUP_BAY_2}")
-                    return True
-                else:
-                    logger.error("Could not find desired time slot in any bay")
-                    return False
-
+            logger.error("Could not find desired time slot in any bay")
+            return False
+            
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
         return False
