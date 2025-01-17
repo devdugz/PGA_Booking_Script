@@ -84,6 +84,17 @@ def try_book_bay(driver, bay_name):
                         wait = WebDriverWait(driver, 10)
                         clickable_button = wait.until(EC.element_to_be_clickable((By.ID, "book")))
                         clickable_button.click()
+                        
+                        #accept location
+                        accept_button = wait.until(EC.presence_of_element_located((By.ID, "accept_location")))
+                        driver.execute_script("arguments[0].scrollIntoView(true);", accept_button)
+                        time.sleep(1)
+
+                        wait = WebDriverWait(driver, 10)
+                        accept_button = wait.until(EC.element_to_be_clickable((By.ID, "accept_location")))
+                        accept_button.click()
+               
+
                         successful_bookings.append(time_slot_value)
                         logger.info(f"Successfully booked {time_slot_value} for {bay_name}")
                         continue  # Continue checking other time slots
