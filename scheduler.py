@@ -35,7 +35,7 @@ scheduler = BlockingScheduler()
 
 # Add jobs for every 15 minutes between 1 AM and 9 AM
 for hour in range(0, 24):
-    for minute in [0, 15, 30, 45]:
+    for minute in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 59]:
         scheduler.add_job(scheduled_job, 'cron', hour=hour, minute=minute)
         logger.info(f"Scheduled job for {hour:02d}:{minute:02d}")
 

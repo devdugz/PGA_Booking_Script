@@ -30,7 +30,7 @@ BACKUP_BAY_1 = "Bay 7"  # First backup bay
 BACKUP_BAY_2 = "Any Bay"  # Second backup bay
 
 # Add at top with other constants
-TIME_SLOTS = ['1630', '1700', '1715', '1730', '1745', '1800']  # 4:30, 5:00, 5:15, 5:30, 5:45, 6:00
+TIME_SLOTS = ['1630', '1700', '1715', '1730', '1745', '1800', '1815']  # 4:30, 5:00, 5:15, 5:30, 5:45, 6:00, 6:15
 
 # Create logs directory if it doesn't exist
 os.makedirs('/Users/cdugz/Documents/PGA_Booking_Script_2/logs', exist_ok=True)
@@ -56,6 +56,15 @@ def try_book_bay(driver, bay_name):
     successful_bookings = []
     
     try:
+        # Select 30-minute lesson
+        # wait = WebDriverWait(driver, 10)
+        # choose_lesson = wait.until(
+        #     EC.presence_of_element_located((By.ID, "select_service"))
+        # )
+        # select = Select(choose_lesson)
+        # select.select_by_value("38507")
+        # time.sleep(2)
+
         wait = WebDriverWait(driver, 10)
         facility_dropdown = wait.until(
             EC.presence_of_element_located((By.ID, "resource1440"))
@@ -68,10 +77,12 @@ def try_book_bay(driver, bay_name):
         for _ in range(4):
             for time_slot_value in TIME_SLOTS:
                 try:
+                    time.sleep(1)
                     logger.info(f"Searching for time slot {time_slot_value} in {bay_name}")
-                    time_slot = wait.until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, f"div.next_avail_item[data-time*='{time_slot_value}']"))
-                    )
+                    time_slot = driver.find_element(By.CSS_SELECTOR, f"div.next_avail_item[data-time*='{time_slot_value}']")
+                    # time_slot = wait.until(
+                    #     EC.element_to_be_clickable((By.CSS_SELECTOR, f"div.next_avail_item[data-time*='{time_slot_value}']"))
+                    # )
                     time_slot.click()
                     logger.info(f"Found time slot {time_slot_value} for {bay_name}, attempting confirmation")
                     
@@ -85,25 +96,29 @@ def try_book_bay(driver, bay_name):
                         clickable_button = wait.until(EC.element_to_be_clickable((By.ID, "book")))
                         clickable_button.click()
                         
-                        #accept location
+                        # Accept location with verification
                         accept_button = wait.until(EC.presence_of_element_located((By.ID, "accept_location")))
                         driver.execute_script("arguments[0].scrollIntoView(true);", accept_button)
                         time.sleep(1)
 
-                        wait = WebDriverWait(driver, 10)
                         accept_button = wait.until(EC.element_to_be_clickable((By.ID, "accept_location")))
                         accept_button.click()
-               
+                        time.sleep(2)  # Wait for confirmation
 
                         successful_bookings.append(time_slot_value)
                         logger.info(f"Successfully booked {time_slot_value} for {bay_name}")
+                        time.sleep(2)
+                        driver.get("https://clients.uschedule.com/pgatsmilwaukee/booking")
+                        time.sleep(2)
                         continue  # Continue checking other time slots
+                        
+                    
                     except Exception as e:
                         logger.error(f"Failed to confirm booking: {str(e)}")
                         continue
                 except:
                     continue
-                    
+
             # If no time slots found, try next page
             try:
                 show_more_button = driver.find_element(By.ID, "more_next_avail")
