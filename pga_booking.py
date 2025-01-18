@@ -77,7 +77,7 @@ def try_book_bay(driver, bay_name):
         for _ in range(4):
             for time_slot_value in TIME_SLOTS:
                 try:
-                    time.sleep(1)
+                    time.sleep(0.5)
                     logger.info(f"Searching for time slot {time_slot_value} in {bay_name}")
                     time_slot = driver.find_element(By.CSS_SELECTOR, f"div.next_avail_item[data-time*='{time_slot_value}']")
                     # time_slot = wait.until(
