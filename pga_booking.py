@@ -30,6 +30,7 @@ BACKUP_BAY_1 = "Bay 7"  # First backup bay
 BACKUP_BAY_2 = "Any Bay"  # Second backup bay
 
 # Add at top with other constants
+
 TIME_SLOTS = ['1630', '1700', '1715', '1730', '1745', '1800', '1815']  # 4:30, 5:00, 5:15, 5:30, 5:45, 6:00, 6:15
 
 # Create logs directory if it doesn't exist
@@ -57,13 +58,13 @@ def try_book_bay(driver, bay_name):
     
     try:
         # Select 30-minute lesson
-        # wait = WebDriverWait(driver, 10)
-        # choose_lesson = wait.until(
-        #     EC.presence_of_element_located((By.ID, "select_service"))
-        # )
-        # select = Select(choose_lesson)
-        # select.select_by_value("38507")
-        # time.sleep(2)
+        wait = WebDriverWait(driver, 10)
+        choose_lesson = wait.until(
+            EC.presence_of_element_located((By.ID, "select_service"))
+        )
+        select = Select(choose_lesson)
+        select.select_by_value("38507")
+        time.sleep(2)
 
         wait = WebDriverWait(driver, 10)
         facility_dropdown = wait.until(
@@ -121,9 +122,10 @@ def try_book_bay(driver, bay_name):
 
             # If no time slots found, try next page
             try:
+                time.sleep(1)
                 show_more_button = driver.find_element(By.ID, "more_next_avail")
                 show_more_button.click()
-                time.sleep(2)
+                time.sleep(1)
             except:
                 logger.info(f"No more pages to check for {bay_name}")
                 break
@@ -145,13 +147,13 @@ def book_golf_bay():
     
     #Chrome Driver Settings:
     chrome_options = Options()
-    chrome_options.add_argument('--headless')  # Basic headless mode
-    chrome_options.add_argument('--disable-gpu')  # Required for headless
-    chrome_options.add_argument('--no-sandbox')  # Required for headless
-    chrome_options.add_argument('--disable-dev-shm-usage')  # Required for headless
-    chrome_options.add_argument('--window-size=1920,1080')  # Set window size
-    chrome_options.add_argument('--disable-notifications')  # Disable notifications
-    chrome_options.add_argument('--disable-extensions')  # Disable extensions
+    # chrome_options.add_argument('--headless')  # Basic headless mode
+    # chrome_options.add_argument('--disable-gpu')  # Required for headless
+    # chrome_options.add_argument('--no-sandbox')  # Required for headless
+    # chrome_options.add_argument('--disable-dev-shm-usage')  # Required for headless
+    # chrome_options.add_argument('--window-size=1920,1080')  # Set window size
+    # chrome_options.add_argument('--disable-notifications')  # Disable notifications
+    # chrome_options.add_argument('--disable-extensions')  # Disable extensions
     
     try:
         logger.info("Initializing Chrome driver")
