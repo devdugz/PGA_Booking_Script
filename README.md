@@ -1,5 +1,3 @@
-# PGA_Booking_Script
-
 # PGA Golf Bay Booking Automation
 
 Automated booking system for PGA golf practice bays using Python and Selenium WebDriver.
