@@ -29,7 +29,7 @@ PRIMARY_BAY = "Bay 5"
 BACKUP_BAY_1 = "Bay 7"  # First backup bay
 BACKUP_BAY_2 = "Any Bay"  # Second backup bay
 
-# Add at top with other constants
+# Add at top with other constants for times
 
 TIME_SLOTS = ['1630', '1700', '1715', '1730', '1745', '1800', '1815']  # 4:30, 5:00, 5:15, 5:30, 5:45, 6:00, 6:15
 
