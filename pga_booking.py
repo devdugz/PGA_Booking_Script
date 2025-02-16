@@ -1,16 +1,16 @@
 import time
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from dotenv import load_dotenv
 import os
 import logging
 import sys
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
+from webdriver_manager.chrome import ChromeDriverManager
+from dotenv import load_dotenv
 
 BAY_MAPPING = {
     "Any Bay": "-1",
@@ -141,25 +141,30 @@ def try_book_bay(driver, bay_name):
         logger.error(f"Error while trying to book {bay_name}: {str(e)}")
         return False
 
+def initialize_driver():
+    try:
+        chrome_options = Options()
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--headless=new')  # Updated headless syntax
+        chrome_options.add_argument('--disable-gpu')   # Recommended for headless
+        chrome_options.add_argument('--window-size=1920,1080')  # Set window size
+        service = Service(ChromeDriverManager().install())
+        return webdriver.Chrome(service=service, options=chrome_options)
+    except Exception as e:
+        logger.error(f"Failed to initialize driver: {str(e)}")
+        return None
+
 def book_golf_bay():
     logger.info("Starting golf bay booking process")
+    logger.info("Initializing Chrome driver")
+    driver = initialize_driver()
+    if not driver:
+        return False
+    
     successful_bays = []
     
-    #Chrome Driver Settings:
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')  # Basic headless mode
-    chrome_options.add_argument('--disable-gpu')  # Required for headless
-    chrome_options.add_argument('--no-sandbox')  # Required for headless
-    chrome_options.add_argument('--disable-dev-shm-usage')  # Required for headless
-    chrome_options.add_argument('--window-size=1920,1080')  # Set window size
-    chrome_options.add_argument('--disable-notifications')  # Disable notifications
-    chrome_options.add_argument('--disable-extensions')  # Disable extensions
-    
     try:
-        logger.info("Initializing Chrome driver")
-        service = Service("./drivers/chromedriver")
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        
         logger.info("Attempting login")
         driver.get("https://clients.uschedule.com/pgatsmilwaukee/account/login")
         time.sleep(2)
